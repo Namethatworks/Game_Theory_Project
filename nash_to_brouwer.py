@@ -127,7 +127,7 @@ def plot_line_compositions(xinput, yinput):
 
 def plot_distortion():
     """plots grid distortion"""
-    num_lines = 20
+    num_lines = 200
     value = np.linspace(0, 1, num_lines)
     ones = np.ones(num_lines)
 
@@ -186,10 +186,23 @@ def plot_composition():
         plt.savefig('iteration_grid_no_pure_NE/' + str(num_composition) + '.png')
         plt.close()
 
+def derivative(f, x, eps = 1e-6):
+    fx = f(x)
+    return np.array([[f([x[0] +eps, x[1]])[0] - fx[0], f([x[0], x[1]+eps])[0] - fx[0]], [f([x[0] +eps, x[1]])[1] - fx[1], f([x[0], x[1]+eps])[1] - fx[1]]]) / eps
+
+def gg(r):
+    x, y = r[0], r[1]
+    return [x**2 + y, 3*y + x]
+
 
 if __name__ == '__main__':
+    # print('right jacobian')
+    # print(derivative(f, Nash_equilibria[-1], eps = 1e-6))
+    # print('left jacobian')
+    # print(derivative(f, Nash_equilibria[-1], eps = -1e-6))
 
-    plot_composition()
+
+    #plot_composition()
 
     # plot_distance()
-    # plot_distortion()
+    plot_distortion()
