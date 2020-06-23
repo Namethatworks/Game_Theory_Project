@@ -155,44 +155,121 @@ def plot_distortion():
     plt.show()
 
 
+
+
 def plot_composition():
     """plots grid distortion"""
-    num_lines = 100
+    num_lines = 50
     value = np.linspace(0, 1, num_lines)
     ones = np.ones(num_lines)
-    X = np.empty((num_lines, num_lines))
-    Y = np.empty((num_lines, num_lines))
+    X1, X2, X3, X4, Y1, Y2, Y3, Y4 = np.empty(num_lines*num_lines), np.empty(num_lines*num_lines), np.empty(num_lines*num_lines), np.empty(num_lines*num_lines), np.empty(num_lines*num_lines), np.empty(num_lines*num_lines), np.empty(num_lines*num_lines), np.empty(num_lines*num_lines)
 
+    square_gridX = np.empty((num_lines, num_lines))
+    square_gridY = np.empty((num_lines, num_lines))
+
+    #square grid
     for i in range(num_lines):
-        #vertical lines
-        X[i, :] = ones*value[i]
-        Y[i, :] = value
+        square_gridX[i, :] = ones*value[i]
+        square_gridY[i, :] = value
+    flat_square_gridX = np.concatenate(square_gridX)
+    flat_square_gridY = np.concatenate(square_gridY)
+    pq = np.empty(2)
+    N = Nash_equilibria[-1, :]
 
-    plt.figure(figsize=(10, 10))
+    #triangular regions
+    # A1 = np.array([0, 0])
+    # A2 = np.array([1, 0])
+    # A3 = np.array([0, 1])
+    # A4 = np.array([1, 1])
+    #
+    # for i in range(len(flat_square_gridX)):
+    #     X1[i], Y1[i] = N + flat_square_gridX[i]*(A1-N)+flat_square_gridY[i]*(1-flat_square_gridX[i])*(A2-N)
+    #     X2[i], Y2[i] = N + flat_square_gridX[i]*(A1-N)+flat_square_gridY[i]*(1-flat_square_gridX[i])*(A3-N)
+    #     X3[i], Y3[i] = N + flat_square_gridX[i]*(A3-N)+flat_square_gridY[i]*(1-flat_square_gridX[i])*(A4-N)
+    #     X4[i], Y4[i] = N + flat_square_gridX[i]*(A2-N)+flat_square_gridY[i]*(1-flat_square_gridX[i])*(A4-N)
+
+    #square regions
+    A1 = np.array([1-N[0], 0])
+    A2 = np.array([0, 1-N[1]])
+    A3 = np.array([-N[0], 0])
+    A4 = np.array([0, -N[1]])
+
+    for i in range(len(flat_square_gridX)):
+        X1[i], Y1[i] = N + flat_square_gridX[i]*A1 + flat_square_gridY[i]*A2
+        X2[i], Y2[i] = N + flat_square_gridX[i]*A2 + flat_square_gridY[i]*A3
+        X3[i], Y3[i] = N + flat_square_gridX[i]*A3 + flat_square_gridY[i]*A4
+        X4[i], Y4[i] = N + flat_square_gridX[i]*A4 + flat_square_gridY[i]*A1
+
 
     for num_composition in range(50):
         plt.title(name_game)
+        plt.scatter(X1, Y1, color='red', s= 10)
+        plt.scatter(X2, Y2, color='orange', s=10)
+        plt.scatter(X3, Y3, color='green', s=10)
+        plt.scatter(X4, Y4, color='blue', s=10)
 
-        for i in range(num_lines):
-            X[i], Y[i] = plot_line_compositions(X[i], Y[i])
-            plt.scatter(X[i], Y[i], color='orange')
-
-        plt.scatter(Nash_equilibria[:, 0], Nash_equilibria[:, 1], s=80, color='red')
+        plt.scatter(Nash_equilibria[:, 0], Nash_equilibria[:, 1], s=80, color='black')
         plt.xlabel(r'$\alpha$')
         plt.ylabel(r'$\beta$')
         plt.xlim(0, 1)
         plt.ylim(0, 1)
         # plt.savefig(name_game + ' distortion.png')
-        plt.savefig('iteration_grid_no_pure_NE/' + str(num_composition) + '.png')
+        plt.savefig('half_colored_no_pure_NE/' + str(num_composition) + '.png')
         plt.close()
+
+        for i in range(len(flat_square_gridX)):
+            pq[0], pq[1] = X1[i], Y1[i]
+            X1[i], Y1[i] = f(pq)
+
+            pq[0], pq[1] = X2[i], Y2[i]
+            X2[i], Y2[i] = f(pq)
+
+            pq[0], pq[1] = X3[i], Y3[i]
+            X3[i], Y3[i] = f(pq)
+
+            pq[0], pq[1] = X4[i], Y4[i]
+            X4[i], Y4[i] = f(pq)
+
+def calculate_invariant_subset():
+    """plots grid distortion"""
+    num_lines = 50
+    value = np.linspace(0, 1, num_lines)
+    ones = np.ones(num_lines)
+    X, Y = np.empty(num_lines*num_lines), np.empty(num_lines*num_lines)
+
+    square_gridX = np.empty((num_lines, num_lines))
+    square_gridY = np.empty((num_lines, num_lines))
+
+    #square grid
+    for i in range(num_lines):
+        square_gridX[i, :] = ones*value[i]
+        square_gridY[i, :] = value
+    X = np.concatenate(square_gridX)
+    Y = np.concatenate(square_gridY)
+    pq = np.empty(2)
+
+    for num_composition in range(30):
+        for i in range(num_lines*num_lines):
+            pq[0], pq[1] = X[i], Y[i]
+            X[i], Y[i] = f(pq)
+
+
+    plt.title(name_game)
+    plt.scatter(X, Y, color='black', s= 10)
+
+    plt.scatter(Nash_equilibria[:, 0], Nash_equilibria[:, 1], s=80, color='red')
+    plt.xlabel(r'$\alpha$')
+    plt.ylabel(r'$\beta$')
+    plt.xlim(0, 1)
+    plt.ylim(0, 1)
+    # plt.savefig(name_game + ' distortion.png')
+    plt.show()
+
 
 def derivative(f, x, eps = 1e-6):
     fx = f(x)
     return np.array([[f([x[0] +eps, x[1]])[0] - fx[0], f([x[0], x[1]+eps])[0] - fx[0]], [f([x[0] +eps, x[1]])[1] - fx[1], f([x[0], x[1]+eps])[1] - fx[1]]]) / eps
 
-def gg(r):
-    x, y = r[0], r[1]
-    return [x**2 + y, 3*y + x]
 
 
 if __name__ == '__main__':
@@ -201,8 +278,7 @@ if __name__ == '__main__':
     # print('left jacobian')
     # print(derivative(f, Nash_equilibria[-1], eps = -1e-6))
 
-
-    #plot_composition()
+    plot_composition()
 
     # plot_distance()
-    plot_distortion()
+    #plot_distortion()
