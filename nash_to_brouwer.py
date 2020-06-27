@@ -270,15 +270,181 @@ def derivative(f, x, eps = 1e-6):
     fx = f(x)
     return np.array([[f([x[0] +eps, x[1]])[0] - fx[0], f([x[0], x[1]+eps])[0] - fx[0]], [f([x[0] +eps, x[1]])[1] - fx[1], f([x[0], x[1]+eps])[1] - fx[1]]]) / eps
 
+def jacobian_first_component(f,x,eps = 0.1):
+    fx = f(x)
+    f0_x0 = (f([x[0] +eps, x[1]])[0] - fx[0])/eps
+    f0_x1 = (f([x[0], x[1]+eps])[0] - fx[0])/eps
+    f1_x0 = (f([x[0] +eps, x[1]])[1] - fx[1])/eps
+    f1_x1 = (f([x[0], x[1]+eps])[1] - fx[1])/eps
+
+
+    return f0_x0
+
+def jacobian_determinant(f,x,eps = 0.1):
+    fx = f(x)
+    #print('x0 ',x[0])
+    f0_x0 = (f([x[0] +eps, x[1]])[0] - fx[0])/eps
+    f0_x1 = (f([x[0], x[1]+eps])[0] - fx[0])/eps
+    f1_x0 = (f([x[0] +eps, x[1]])[1] - fx[1])/eps
+    f1_x1 = (f([x[0], x[1]+eps])[1] - fx[1])/eps
+
+
+    return f0_x0*f1_x1-f0_x1*f1_x0
+
+def monte_carlo_derivative(f,x,eps,max_iter,ignore_borders):
+    import math
+    fx = f(x)
+    # sample points around x with distance < eps
+    iter = 0
+    f_x = 0
+    f_y = 0
+    f_xy = 0
+    while(iter<max_iter):
+        # generate pseudorandom numbers.
+        xplush = []
+        xminush = []
+        yplush = []
+        yminush = []
+        bothplush = []
+        bothminush = []
+        diffa = []
+        diffb = []
+        while(1): # sorry for this
+            uniform_rand_samp1 = np.random.random_sample()
+            uniform_rand_samp2 = np.random.random_sample()
+            # generate sample points: x+h,x-h,y+h,y-h
+            xplush = np.array([x[0]+eps*uniform_rand_samp1,x[1]])
+            xminush = np.array([x[0]-eps*uniform_rand_samp1,x[1]])
+            yplush = np.array([x[0],x[1]+eps*uniform_rand_samp2])
+            yminush = np.array([x[0],x[1]-eps*uniform_rand_samp2])
+            bothplush = np.array([x[0]+eps*uniform_rand_samp1,x[1]+uniform_rand_samp2*eps])
+            bothminush = np.array([x[0]-eps*uniform_rand_samp1,x[1]-uniform_rand_samp2*eps])
+            diffa = np.array([x[0]+eps*uniform_rand_samp1,x[1]-uniform_rand_samp2*eps])
+            diffb = np.array([x[0]-eps*uniform_rand_samp1,x[1]+uniform_rand_samp2*eps])
+            # make sure its in the bounding box. Can be a problem in the edges.
+            if ((xminush[0]>0) and yminush[1]>0 and 1 > yplush[1] and 1 > xplush[0]):
+                break
+            elif (ignore_borders is True):
+                break
+        f_x = f_x + (f(xplush)-f(xminush))/((xplush[0]-xminush[0])*2) #finite differences: fx = (f(x+h,y)-f(x-h,y))/(2h) -
+        f_y = f_y + (f(yplush)-f(yminush))/((yplush[1]-yminush[1])*2) #finite differences: fy = (f(x,y+h)-f(x,y-h))/(2h)
+        # lets also use the sampled points to get the mixed derivative:
+        f_xy = f_xy + (f(bothplush)-f(diffa)-f(diffb)+f(bothminush))/(4*(yplush[1]-yminush[1])*(xplush[0]-xminush[0])) #same principle, finite difference mixed derivative.
+
+
+        iter = iter+1
+    # average over iterations:
+    f_x = f_x/max_iter
+    f_y = f_y/max_iter
+    f_xy = f_xy/max_iter
+
+    # some housekeeping
+    determinant = f_x[0]*f_y[1]-f_x[1]*f_y[0]
+    rot = f_xy[0]-f_xy[1]
+    return np.array([determinant,f_x[0],rot])
+
+def plot_determinant():
+    """plots |f(x) - x| for x = [alfa, beta] representing all mixed strategies"""
+
+    num_points = 100
+    alfa = np.linspace(0, 1, num_points)
+    beta = np.linspace(0, 1, num_points)
+    ALFA, BETA = np.meshgrid(alfa, beta)
+    determin = np.empty((len(alfa), len(beta)))
+    strategy = np.empty(2)
+    for i in range(len(alfa)):
+        for j in range(len(beta)):
+            strategy[0], strategy[1] = ALFA[i, j], BETA[i, j]
+            determin[i, j] = monte_carlo_derivative(f,strategy,1e-2,100,True)[0]
+
+    plt.figure(figsize=(10, 13))
+    plt.title(name_game)
+    plt.contourf(ALFA, BETA, determin, cmap='viridis')
+    legend = plt.colorbar(orientation='horizontal')
+    legend.set_label(r'$\vert f(\alpha, \beta) - (\alpha, \beta) \vert$')
+
+    plt.scatter(Nash_equilibria[:, 0], Nash_equilibria[:, 1], s = 80, color = 'red')
+
+    plt.xlim(-0.05, 1.05)
+    plt.ylim(-0.05, 1.05)
+    plt.xlabel(r'$\alpha$')
+    plt.ylabel(r'$\beta$')
+    plt.savefig(name_game + ' determinant.png')
+    #plt.show()
+
+def plot_rotation():
+    """plots |f(x) - x| for x = [alfa, beta] representing all mixed strategies"""
+
+    num_points = 100
+    alfa = np.linspace(0, 1, num_points)
+    beta = np.linspace(0, 1, num_points)
+    ALFA, BETA = np.meshgrid(alfa, beta)
+    determin = np.empty((len(alfa), len(beta)))
+    strategy = np.empty(2)
+    for i in range(len(alfa)):
+        for j in range(len(beta)):
+            strategy[0], strategy[1] = ALFA[i, j], BETA[i, j]
+            determin[i, j] = monte_carlo_derivative(f,strategy,1e-2,100,True)[2]
+
+    plt.figure(figsize=(10, 13))
+    plt.title(name_game)
+    plt.contourf(ALFA, BETA, determin, cmap='viridis')
+    legend = plt.colorbar(orientation='horizontal')
+    legend.set_label(r'$\vert f(\alpha, \beta) - (\alpha, \beta) \vert$')
+
+    plt.scatter(Nash_equilibria[:, 0], Nash_equilibria[:, 1], s = 80, color = 'red')
+
+    plt.xlim(-0.05, 1.05)
+    plt.ylim(-0.05, 1.05)
+    plt.xlabel(r'$\alpha$')
+    plt.ylabel(r'$\beta$')
+    plt.savefig(name_game + ' rotation.png')
+    #plt.show()
+
+def plot_first_component():
+    """plots |f(x) - x| for x = [alfa, beta] representing all mixed strategies"""
+
+    num_points = 100
+    alfa = np.linspace(0, 1, num_points)
+    beta = np.linspace(0, 1, num_points)
+    ALFA, BETA = np.meshgrid(alfa, beta)
+    determin = np.empty((len(alfa), len(beta)))
+    strategy = np.empty(2)
+    for i in range(len(alfa)):
+        for j in range(len(beta)):
+            strategy[0], strategy[1] = ALFA[i, j], BETA[i, j]
+            determin[i, j] = monte_carlo_derivative(f,strategy,1e-2,100,True)[1]
+
+    plt.figure(figsize=(10, 13))
+    plt.title(name_game)
+    plt.contourf(ALFA, BETA, determin, cmap='viridis')
+    legend = plt.colorbar(orientation='horizontal')
+    legend.set_label(r'$\vert f(\alpha, \beta) - (\alpha, \beta) \vert$')
+
+    plt.scatter(Nash_equilibria[:, 0], Nash_equilibria[:, 1], s = 80, color = 'red')
+
+    plt.xlim(-0.05, 1.05)
+    plt.ylim(-0.05, 1.05)
+    plt.xlabel(r'$\alpha$')
+    plt.ylabel(r'$\beta$')
+    plt.savefig(name_game + ' first_component.png')
+    #plt.show()
 
 
 if __name__ == '__main__':
     # print('right jacobian')
-    # print(derivative(f, Nash_equilibria[-1], eps = 1e-6))
+    print('derivative: ',derivative(f, Nash_equilibria[-1], eps = 1e-6))
+    print('first_component: ',jacobian_first_component(f,Nash_equilibria[-1],eps = 0.01))
+    print('determinant: ',jacobian_determinant(f,Nash_equilibria[-1],eps = 0.01))
+    print('Nash_equilibiria: ', Nash_equilibria)
+    print('Monte carlo: ', monte_carlo_derivative(f,Nash_equilibria[-1],1e-6,1000,True))
+    plot_determinant()
+    plot_rotation()
+    plot_first_component()
     # print('left jacobian')
     # print(derivative(f, Nash_equilibria[-1], eps = -1e-6))
 
-    plot_composition()
+    #plot_composition()
 
     # plot_distance()
     #plot_distortion()
