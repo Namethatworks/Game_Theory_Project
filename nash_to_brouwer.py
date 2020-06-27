@@ -344,7 +344,7 @@ def monte_carlo_derivative(f,x,eps,max_iter,ignore_borders):
     return np.array([determinant,f_x[0],rot])
 
 def plot_determinant():
-    """plots |f(x) - x| for x = [alfa, beta] representing all mixed strategies"""
+    """plots determinant of jacobian of f for x = [alfa, beta] representing all mixed strategies"""
 
     num_points = 100
     alfa = np.linspace(0, 1, num_points)
@@ -373,7 +373,7 @@ def plot_determinant():
     #plt.show()
 
 def plot_rotation():
-    """plots |f(x) - x| for x = [alfa, beta] representing all mixed strategies"""
+    """plots 3rd component of curl for f for x = [alfa, beta] representing all mixed strategies"""
 
     num_points = 100
     alfa = np.linspace(0, 1, num_points)
@@ -402,7 +402,7 @@ def plot_rotation():
     #plt.show()
 
 def plot_first_component():
-    """plots |f(x) - x| for x = [alfa, beta] representing all mixed strategies"""
+    """plots first component of jacobian of f for x = [alfa, beta] representing all mixed strategies"""
 
     num_points = 100
     alfa = np.linspace(0, 1, num_points)
