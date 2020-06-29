@@ -1,5 +1,4 @@
 import numpy as np
-import sys
 import matplotlib.pyplot as plt
 import nash_to_brouwer as ntb
 
@@ -35,7 +34,7 @@ def plot_vector_filed(func):
             
     #PB: Here we search for yellow-red and red-yellow horizontal edges and append the coordinate list ryhor 
     #PB: Note that the modulo condition has to be added to make sure we don't count edges that "skip the boundaries"
-    for i in range(len(Xflat)):
+    for i in range(len(Xflat)-1):
         if colorarr[i] == 'red' and colorarr[i+1] == 'gold' and (i+1) % N != 0:
             yranticlockwise.append([[Xflat[i],Yflat[i]],[Xflat[i+1],Yflat[i+1]]])
         elif colorarr[i] == 'gold' and colorarr[i+1] == 'red' and (i+1) % N != 0:
@@ -44,7 +43,7 @@ def plot_vector_filed(func):
     #PB:Here we search for yellow-red and red-yellow diagonal edges and append the coordinate list rydiag
     #PB:Note that the modulo condition has to be added to make sure we don't count edges that "skip the boundaries"
     #PB:Note also, that we don't scan the N-th latitudonal line hence we reduce the length of our "for" loop
-    for i in range(len(Xflat)-N):
+    for i in range(len(Xflat)-N-1):
         if colorarr[i] == 'red' and colorarr[i+N-1] == 'gold' and i % N != 0:
             yranticlockwise.append([[Xflat[i],Yflat[i]],[Xflat[i+N-1],Yflat[i+N-1]]])
         elif colorarr[i] == 'gold' and colorarr[i+N-1] == 'red' and i % N != 0:
@@ -52,7 +51,7 @@ def plot_vector_filed(func):
     #PB:Here we search for yellow-red and red-yellow diagonal edges and append the coordinate list rydiag
     #PB:Here we do not risk skipping the boundaries
     #PB:Note also, that we don't scan the N-th latitudonal line hence we reduce the length of our "for" loop
-    for i in range(len(Xflat)-N):
+    for i in range(len(Xflat)-N-1):
         if colorarr[i] == 'red' and colorarr[i+N] == 'gold':
             ryclockwise.append([[Xflat[i],Yflat[i]],[Xflat[i+N-1],Yflat[i+N-1]]])
         elif colorarr[i] == 'gold' and colorarr[i+N] == 'red':
