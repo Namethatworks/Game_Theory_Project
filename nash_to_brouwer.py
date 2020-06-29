@@ -17,22 +17,31 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+plt.rcParams['xtick.labelsize'] = 13
+plt.rcParams['ytick.labelsize'] = 13
+
 #choose a game (uncomment)
-name_game = 'Cooperation game'
-a, A, d, D, b, B, c, C = 4, 4, 2, 2, 0, 0, 0, 0
+# name_game = 'Cooperation game'
+# a, A, d, D, b, B, c, C = 4, 4, 2, 2, 0, 0, 0, 0
 
-#name_game = "No pure Nash equilibrium"
-#a, A, d, D, b, B, c, C = 0, 0, 1, 1, 2, -1, 3, -1
+name_game = "No pure Nash equilibrium"
+a, A, d, D, b, B, c, C = 0, 0, 1, 1, 2, -1, 3, -1
 
-#name_game = "Prisoner's dilemma"
-#a, A, d, D, b, B, c, C = -1, -1, -2, -2, -3, -3, 0, 0
+# name_game = "Prisoner's dilemma"
+# a, A, d, D, b, B, c, C = -1, -1, -2, -2, -4, -4, 0, 0
 
+# name_game = "NE: mixed, (1, 0), (0, 1)"
+# a, d, b, c = 0, 1, 2, 3
+# A, D, B, C = 0, 1, 2, 1
+
+# name_game = "NE: mixed, (1, 1)"
+# a, d, b, c = 0, 0, -2, -1
+# A, D, B, C = 0, 0, -2, -1
 
 #form suitable for further calculations
 utilities = np.array([[[a, b], [c, d]],
                       [[A, B], [C, D]]])
 
-print(utilities[0,1,0])
 
 def find_NE(a, A, d, D, b, B, c, C):
     NE = []
@@ -53,7 +62,7 @@ Nash_equilibria = find_NE(a, A, d, D, b, B, c, C)
 print('Nash equilibria:')
 print(Nash_equilibria)
 
-def g(strategies, player, option):
+def g(strategies, player, option, utilities):
     other_player = (player+1)%2
     u_change_to_option = utilities[player, option, 0] * strategies[other_player] + utilities[player, option, 1] * (1-strategies[other_player])
     u_dont_change = (utilities[player, 0, 0]*strategies[player] + utilities[player, 1, 0] * (1-strategies[player])) * strategies[other_player] \
@@ -62,13 +71,17 @@ def g(strategies, player, option):
     Gain = 0 if (u_dont_change> u_change_to_option) else (u_change_to_option - u_dont_change)
     return Gain + strategies[player]*(1-2*option) + option #second part is just how likely is a player to play option. This way of writting works only for 2by2 game.
 
-def f(strategies):
+def payoof_of_strategy(strategies, utilities):
+    return ((utilities[0, 0, 0]*strategies[0] + utilities[0, 1, 0] * (1-strategies[0])) * strategies[1]  + (utilities[0, 0, 1]*strategies[0] + utilities[0, 1, 1] * (1-strategies[0])) * (1 - strategies[1]),
+            (utilities[1, 0, 0] * strategies[1] + utilities[1, 1, 0] * (1 - strategies[1])) * strategies[0] + (utilities[1, 0, 1] * strategies[1] + utilities[1, 1, 1] * (1 - strategies[1])) * (1 - strategies[0]))
+
+def f(strategies, utilities):
     """function mapping [0, 1]^2 -> [0, 1]^2. It's fixed points correspond to NE"""
-    g00, g01, g10, g11 = g(strategies, 0, 0), g(strategies, 0, 1), g(strategies, 1, 0), g(strategies, 1, 1)
+    g00, g01, g10, g11 = g(strategies, 0, 0, utilities), g(strategies, 0, 1, utilities), g(strategies, 1, 0, utilities), g(strategies, 1, 1, utilities)
     return np.array([g00/(g00+g01), g10/(g10+g11)])
 
 
-def plot_distance():
+def plot_distance(utilities):
     """plots |f(x) - x| for x = [alfa, beta] representing all mixed strategies"""
 
     num_points = 100
@@ -80,20 +93,21 @@ def plot_distance():
     for i in range(len(alfa)):
         for j in range(len(beta)):
             strategy[0], strategy[1] = ALFA[i, j], BETA[i, j]
-            Distance[i, j] = np.sqrt(np.sum(np.square(f(strategy) - strategy)))
+            Distance[i, j] = np.sqrt(np.sum(np.square(f(strategy, utilities) - strategy)))
 
     plt.figure(figsize=(10, 13))
-    plt.title(name_game)
+    font = 18
+    plt.title(name_game, fontsize = font+3)
     plt.contourf(ALFA, BETA, Distance, cmap='viridis')
     legend = plt.colorbar(orientation='horizontal')
-    legend.set_label(r'$\vert f(\alpha, \beta) - (\alpha, \beta) \vert$')
+    legend.set_label(r'$\vert f(\alpha, \beta) - (\alpha, \beta) \vert$', fontsize = font)
 
     plt.scatter(Nash_equilibria[:, 0], Nash_equilibria[:, 1], s = 80, color = 'red')
 
     plt.xlim(-0.05, 1.05)
     plt.ylim(-0.05, 1.05)
-    plt.xlabel(r'$\alpha$')
-    plt.ylabel(r'$\beta$')
+    plt.xlabel(r'$\alpha$', fontsize = font)
+    plt.ylabel(r'$\beta$', fontsize = font)
     plt.savefig(name_game + ' distance.png')
     plt.show()
 
@@ -203,41 +217,44 @@ def plot_composition():
 
 
     for num_composition in range(50):
-        plt.title(name_game)
         plt.scatter(X1, Y1, color='red', s= 10)
         plt.scatter(X2, Y2, color='orange', s=10)
         plt.scatter(X3, Y3, color='green', s=10)
         plt.scatter(X4, Y4, color='blue', s=10)
 
         plt.scatter(Nash_equilibria[:, 0], Nash_equilibria[:, 1], s=80, color='black')
-        plt.xlabel(r'$\alpha$')
-        plt.ylabel(r'$\beta$')
+        plt.xlabel(r'$\alpha$', fontsize = 18)
+        plt.ylabel(r'$\beta$', fontsize = 18)
         plt.xlim(0, 1)
         plt.ylim(0, 1)
         # plt.savefig(name_game + ' distortion.png')
-        plt.savefig('half_colored_no_pure_NE/' + str(num_composition) + '.png')
+        plt.savefig('prisoner/' + str(num_composition) + '.png')
         plt.close()
 
         for i in range(len(flat_square_gridX)):
             pq[0], pq[1] = X1[i], Y1[i]
-            X1[i], Y1[i] = f(pq)
+            X1[i], Y1[i] = f(pq, utilities)
 
             pq[0], pq[1] = X2[i], Y2[i]
-            X2[i], Y2[i] = f(pq)
+            X2[i], Y2[i] = f(pq, utilities)
 
             pq[0], pq[1] = X3[i], Y3[i]
-            X3[i], Y3[i] = f(pq)
+            X3[i], Y3[i] = f(pq, utilities)
 
             pq[0], pq[1] = X4[i], Y4[i]
-            X4[i], Y4[i] = f(pq)
+            X4[i], Y4[i] = f(pq, utilities)
 
-def calculate_invariant_subset():
+def calculate_invariant_subset(a, b, c, d, A, B, C, D, iternum):
     """plots grid distortion"""
-    num_lines = 50
+
+    utilities = np.array([[[a, b], [c, d]],
+                          [[A, B], [C, D]]])
+
+    Nash_equilibria = find_NE(a, A, d, D, b, B, c, C)
+
+    num_lines = 100
     value = np.linspace(0, 1, num_lines)
     ones = np.ones(num_lines)
-    X, Y = np.empty(num_lines*num_lines), np.empty(num_lines*num_lines)
-
     square_gridX = np.empty((num_lines, num_lines))
     square_gridY = np.empty((num_lines, num_lines))
 
@@ -245,207 +262,144 @@ def calculate_invariant_subset():
     for i in range(num_lines):
         square_gridX[i, :] = ones*value[i]
         square_gridY[i, :] = value
-    X = np.concatenate(square_gridX)
-    Y = np.concatenate(square_gridY)
+    Xarr = np.concatenate(square_gridX)
+    Yarr = np.concatenate(square_gridY)
     pq = np.empty(2)
 
-    for num_composition in range(30):
+    for num_composition in range(500):#+10*int(1.0/(A-C))):
         for i in range(num_lines*num_lines):
-            pq[0], pq[1] = X[i], Y[i]
-            X[i], Y[i] = f(pq)
+            pq[0], pq[1] = Xarr[i], Yarr[i]
+            Xarr[i], Yarr[i] = f(pq, utilities)
+    np.save('X1arr'+str(iternum)+'.npy', Xarr)
+    np.save('Y1arr'+str(iternum)+'.npy', Yarr)
 
-
-    plt.title(name_game)
-    plt.scatter(X, Y, color='black', s= 10)
+    plt.title('A - C = {0}'.format(np.round(A-C, 2)))
+    plt.scatter(Xarr, Yarr, color='black', s= 5)
 
     plt.scatter(Nash_equilibria[:, 0], Nash_equilibria[:, 1], s=80, color='red')
     plt.xlabel(r'$\alpha$')
     plt.ylabel(r'$\beta$')
     plt.xlim(0, 1)
     plt.ylim(0, 1)
-    # plt.savefig(name_game + ' distortion.png')
+    plt.show()
+    #plt.savefig('invariant_subset' + str(iternum) + '.png')
+    #plt.close()
+
+def plot_from_saved(X, Nash_equilibria):
+    plt.figure(figsize = (15, 10))
+    for i in range(len(X)):
+        Xarr = np.load('saved_subsets/X1arr'+str(i)+'.npy')
+        Yarr = np.load('saved_subsets/Y1arr'+str(i)+'.npy')
+
+        plt.scatter(Xarr, Yarr, s= 5, label = 'A-C = {0}'.format(np.round(X[i], 2)))
+
+    plt.xlabel(r'$\alpha$', fontsize = 18)
+    plt.ylabel(r'$\beta$', fontsize = 18)
+    plt.scatter(Nash_equilibria[:, 0], Nash_equilibria[:, 1], s=80, color='black', label='Nash eequilibrium')
+    lgnd = plt.legend(scatterpoints=1, fontsize=18)
+    for i in range(4):
+        lgnd.legendHandles[i]._sizes = [40]
+    plt.savefig('phase_transition')
     plt.show()
 
+def compose_f(f, x, N):
+    """returns f(f(f(....f(x)))), where composition is N times"""
+    y = np.copy(x)
+    for i in range(N):
+        y = f(y)
+    return y
 
-def derivative(f, x, eps = 1e-6):
+def derivative(f, x, eps):
     fx = f(x)
     return np.array([[f([x[0] +eps, x[1]])[0] - fx[0], f([x[0], x[1]+eps])[0] - fx[0]], [f([x[0] +eps, x[1]])[1] - fx[1], f([x[0], x[1]+eps])[1] - fx[1]]]) / eps
 
-def jacobian_first_component(f,x,eps = 0.1):
-    fx = f(x)
-    f0_x0 = (f([x[0] +eps, x[1]])[0] - fx[0])/eps
-    f0_x1 = (f([x[0], x[1]+eps])[0] - fx[0])/eps
-    f1_x0 = (f([x[0] +eps, x[1]])[1] - fx[1])/eps
-    f1_x1 = (f([x[0], x[1]+eps])[1] - fx[1])/eps
+def phase_transition():
+    rep = 4
+    K = 0.6
+    a, d, b, c = 0, 1, 2, 3
+    X = [0.3, 0.1, 0.05, 0.02]
+    # for i in range(rep):
+    #     print(i)
+    #     A, D, B, C = X[i], 1 + K * X[i] / (1 - K), 1, 0
+    #     #plot_from_saved(a, b, c, d, A, B, C, D)
+    #     calculate_invariant_subset(a, b, c, d, A, B, C, D, i)
+    A, D, B, C = X[0], 1 + K * X[0] / (1 - K), 1, 0
+    N = find_NE(a, A, d, D, b, B, c, C)
+    plot_from_saved(X, N)
+
+def payoffs():
+    a, d, b, c = 0, 1, 2, 3
+    X, K = 0.1, 0.6
+    A, D, B, C = X, 1 + K * X / (1 - K), 1, 0
+    utilities = np.array([[[a, b], [c, d]], [[A, B], [C, D]]])
+    Xarr = np.load('saved_subsets/X1arr' + str(1) + '.npy')
+    Yarr = np.load('saved_subsets/Y1arr' + str(1) + '.npy')
+    U, V, strategy = np.empty(len(Xarr)), np.empty(len(Xarr)), np.empty(2)
+
+    for i in range(len(Xarr)):
+        strategy[0], strategy[1] = Xarr[i], Yarr[i]
+        U[i], V[i] = payoof_of_strategy(strategy, utilities)
+    plt.scatter(U, V)
+    plt.show()
+
+def jacobian(f, x, eps):
+    """returns flattened jacobian: [df1/dx, df1/dy, df2/dx, df2/dy]"""
+    r = np.copy(x)
+    fx, fy = f(r) #point
+    r[0] += eps
+    fxright, fyright = f(r)
+    r[0] -= eps
+    r[1] += eps
+    fxup, fyup = f(r)
+
+    return np.array([fxright-fx, fxup-fx, fyright-fy, fyup-fy])/eps
 
 
-    return f0_x0
+def jacobian_around_point(f, point, radius, eps):
 
-def jacobian_determinant(f,x,eps = 0.1):
-    fx = f(x)
-    #print('x0 ',x[0])
-    f0_x0 = (f([x[0] +eps, x[1]])[0] - fx[0])/eps
-    f0_x1 = (f([x[0], x[1]+eps])[0] - fx[0])/eps
-    f1_x0 = (f([x[0] +eps, x[1]])[1] - fx[1])/eps
-    f1_x1 = (f([x[0], x[1]+eps])[1] - fx[1])/eps
+    t = np.linspace(0, 2*np.pi, 200)
+    points_x = point[0] + np.cos(t)*radius
+    points_y = point[1] + np.sin(t)*radius
+    x = np.empty(2)
+    Jacobians = np.empty((len(t), 4))
 
+    for i in range(len(t)):
+        x[0], x[1] = points_x[i], points_y[i]
+        Jacobians[i, :] = jacobian(f, x, eps)
+    return Jacobians
 
-    return f0_x0*f1_x1-f0_x1*f1_x0
+def plot_jacobians(f, point, radius, eps):
+    t = np.linspace(0, 2 * np.pi, 200)
+    string = ['11', '12', '21', '22']
+    Jacobians = jacobian_around_point(f, point, radius, eps)
+    plt.figure(figsize = (15, 15))
+    for i in range(4):
+        plt.subplot(2, 2, i+1)
+        plt.plot(t/np.pi, Jacobians[:, i])
+        plt.xlabel(r'$\phi / \pi$')
+        plt.ylabel(string[i] + ' th component of Jacobian')
+    plt.savefig('Jacobian_matrix')
+    plt.show()
 
-def monte_carlo_derivative(f,x,eps,max_iter,ignore_borders):
-    import math
-    fx = f(x)
-    # sample points around x with distance < eps
-    iter = 0
-    f_x = 0
-    f_y = 0
-    f_xy = 0
-    while(iter<max_iter):
-        # generate pseudorandom numbers.
-        xplush = []
-        xminush = []
-        yplush = []
-        yminush = []
-        bothplush = []
-        bothminush = []
-        diffa = []
-        diffb = []
-        while(1): # sorry for this
-            uniform_rand_samp1 = np.random.random_sample()
-            uniform_rand_samp2 = np.random.random_sample()
-            # generate sample points: x+h,x-h,y+h,y-h
-            xplush = np.array([x[0]+eps*uniform_rand_samp1,x[1]])
-            xminush = np.array([x[0]-eps*uniform_rand_samp1,x[1]])
-            yplush = np.array([x[0],x[1]+eps*uniform_rand_samp2])
-            yminush = np.array([x[0],x[1]-eps*uniform_rand_samp2])
-            bothplush = np.array([x[0]+eps*uniform_rand_samp1,x[1]+uniform_rand_samp2*eps])
-            bothminush = np.array([x[0]-eps*uniform_rand_samp1,x[1]-uniform_rand_samp2*eps])
-            diffa = np.array([x[0]+eps*uniform_rand_samp1,x[1]-uniform_rand_samp2*eps])
-            diffb = np.array([x[0]-eps*uniform_rand_samp1,x[1]+uniform_rand_samp2*eps])
-            # make sure its in the bounding box. Can be a problem in the edges.
-            if ((xminush[0]>0) and yminush[1]>0 and 1 > yplush[1] and 1 > xplush[0]):
-                break
-            elif (ignore_borders is True):
-                break
-        f_x = f_x + (f(xplush)-f(xminush))/((xplush[0]-xminush[0])*2) #finite differences: fx = (f(x+h,y)-f(x-h,y))/(2h) -
-        f_y = f_y + (f(yplush)-f(yminush))/((yplush[1]-yminush[1])*2) #finite differences: fy = (f(x,y+h)-f(x,y-h))/(2h)
-        # lets also use the sampled points to get the mixed derivative:
-        f_xy = f_xy + (f(bothplush)-f(diffa)-f(diffb)+f(bothminush))/(4*(yplush[1]-yminush[1])*(xplush[0]-xminush[0])) #same principle, finite difference mixed derivative.
+def plot_off_diagonal_product(f, point, radius, eps):
+    t = np.linspace(0, 2 * np.pi, 200)
+    Jacobians = jacobian_around_point(f, point, radius, eps)
+    plt.figure(figsize=(10, 10))
 
-
-        iter = iter+1
-    # average over iterations:
-    f_x = f_x/max_iter
-    f_y = f_y/max_iter
-    f_xy = f_xy/max_iter
-
-    # some housekeeping
-    determinant = f_x[0]*f_y[1]-f_x[1]*f_y[0]
-    rot = f_xy[0]-f_xy[1]
-    return np.array([determinant,f_x[0],rot])
-
-def plot_determinant():
-    """plots determinant of jacobian of f for x = [alfa, beta] representing all mixed strategies"""
-
-    num_points = 100
-    alfa = np.linspace(0, 1, num_points)
-    beta = np.linspace(0, 1, num_points)
-    ALFA, BETA = np.meshgrid(alfa, beta)
-    determin = np.empty((len(alfa), len(beta)))
-    strategy = np.empty(2)
-    for i in range(len(alfa)):
-        for j in range(len(beta)):
-            strategy[0], strategy[1] = ALFA[i, j], BETA[i, j]
-            determin[i, j] = monte_carlo_derivative(f,strategy,1e-2,100,True)[0]
-
-    plt.figure(figsize=(10, 13))
-    plt.title(name_game)
-    plt.contourf(ALFA, BETA, determin, cmap='viridis')
-    legend = plt.colorbar(orientation='horizontal')
-    legend.set_label(r'$\vert f(\alpha, \beta) - (\alpha, \beta) \vert$')
-
-    plt.scatter(Nash_equilibria[:, 0], Nash_equilibria[:, 1], s = 80, color = 'red')
-
-    plt.xlim(-0.05, 1.05)
-    plt.ylim(-0.05, 1.05)
-    plt.xlabel(r'$\alpha$')
-    plt.ylabel(r'$\beta$')
-    plt.savefig(name_game + ' determinant.png')
-    #plt.show()
-
-def plot_rotation():
-    """plots 3rd component of curl for f for x = [alfa, beta] representing all mixed strategies"""
-
-    num_points = 100
-    alfa = np.linspace(0, 1, num_points)
-    beta = np.linspace(0, 1, num_points)
-    ALFA, BETA = np.meshgrid(alfa, beta)
-    determin = np.empty((len(alfa), len(beta)))
-    strategy = np.empty(2)
-    for i in range(len(alfa)):
-        for j in range(len(beta)):
-            strategy[0], strategy[1] = ALFA[i, j], BETA[i, j]
-            determin[i, j] = monte_carlo_derivative(f,strategy,1e-2,100,True)[2]
-
-    plt.figure(figsize=(10, 13))
-    plt.title(name_game)
-    plt.contourf(ALFA, BETA, determin, cmap='viridis')
-    legend = plt.colorbar(orientation='horizontal')
-    legend.set_label(r'$\vert f(\alpha, \beta) - (\alpha, \beta) \vert$')
-
-    plt.scatter(Nash_equilibria[:, 0], Nash_equilibria[:, 1], s = 80, color = 'red')
-
-    plt.xlim(-0.05, 1.05)
-    plt.ylim(-0.05, 1.05)
-    plt.xlabel(r'$\alpha$')
-    plt.ylabel(r'$\beta$')
-    plt.savefig(name_game + ' rotation.png')
-    #plt.show()
-
-def plot_first_component():
-    """plots first component of jacobian of f for x = [alfa, beta] representing all mixed strategies"""
-
-    num_points = 100
-    alfa = np.linspace(0, 1, num_points)
-    beta = np.linspace(0, 1, num_points)
-    ALFA, BETA = np.meshgrid(alfa, beta)
-    determin = np.empty((len(alfa), len(beta)))
-    strategy = np.empty(2)
-    for i in range(len(alfa)):
-        for j in range(len(beta)):
-            strategy[0], strategy[1] = ALFA[i, j], BETA[i, j]
-            determin[i, j] = monte_carlo_derivative(f,strategy,1e-2,100,True)[1]
-
-    plt.figure(figsize=(10, 13))
-    plt.title(name_game)
-    plt.contourf(ALFA, BETA, determin, cmap='viridis')
-    legend = plt.colorbar(orientation='horizontal')
-    legend.set_label(r'$\vert f(\alpha, \beta) - (\alpha, \beta) \vert$')
-
-    plt.scatter(Nash_equilibria[:, 0], Nash_equilibria[:, 1], s = 80, color = 'red')
-
-    plt.xlim(-0.05, 1.05)
-    plt.ylim(-0.05, 1.05)
-    plt.xlabel(r'$\alpha$')
-    plt.ylabel(r'$\beta$')
-    plt.savefig(name_game + ' first_component.png')
-    #plt.show()
+    plt.plot(t / np.pi, np.sqrt(-Jacobians[:, 1]*Jacobians[:, 2]))
+    plt.xlabel(r'$\phi / \pi$')
+    plt.ylabel(r'$\lambda_1$')
+    plt.title(r'$\lambda_{1, 2} = \pm i \sqrt{-J_{12} \cdot J_{21}}$')
+    plt.savefig('eigenvalues')
+    plt.show()
 
 
 if __name__ == '__main__':
-    # print('right jacobian')
-    print('derivative: ',derivative(f, Nash_equilibria[-1], eps = 1e-6))
-    print('first_component: ',jacobian_first_component(f,Nash_equilibria[-1],eps = 0.01))
-    print('determinant: ',jacobian_determinant(f,Nash_equilibria[-1],eps = 0.01))
-    print('Nash_equilibiria: ', Nash_equilibria)
-    print('Monte carlo: ', monte_carlo_derivative(f,Nash_equilibria[-1],1e-6,1000,True))
-    plot_determinant()
-    plot_rotation()
-    plot_first_component()
-    # print('left jacobian')
-    # print(derivative(f, Nash_equilibria[-1], eps = -1e-6))
-
-    #plot_composition()
-
-    # plot_distance()
+    #phase_transition()
+    #payoffs()
+    #plot_distance(utilities)
     #plot_distortion()
+    #plot_composition()
+    #calculate_invariant_subset(a, b, c, d, A, B, C, D, 0)
+    #plot_jacobians(lambda x: f(x, utilities), Nash_equilibria[-1], 1e-5, 1e-8)
+    plot_off_diagonal_product(lambda x: f(x, utilities), Nash_equilibria[-1], 1e-5, 1e-8)
