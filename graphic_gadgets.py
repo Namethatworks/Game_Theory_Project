@@ -1,5 +1,6 @@
 from typing import Dict
 
+from networkx.drawing.nx_agraph import write_dot, graphviz_layout
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -40,6 +41,7 @@ class ExpressionGraph:
     internal_nodes = 0
 
     def __init__(self, expression):
+        self.expression = expression
         ast_tree = ast.parse(expression, mode='eval')
         self._eval(ast_tree.body)
 
@@ -51,19 +53,21 @@ class ExpressionGraph:
             for neighbour in node.get_neighbours():
                 G.add_edge(neighbour.get_name(), node.get_name())
 
-        pos = nx.spring_layout(G)
-
         all_nodes = self.nodes.keys()
-        end_nodes = ["v" + str(self.main_nodes - 1)]
-        main_nodes = [x for x in all_nodes if not x.startswith("v") and not x.startswith("w")]
-        int_nodes = [x for x in all_nodes if (x.startswith("v") or x.startswith("w")) and not x == end_nodes[0]]
+        end_nodes = ["v5", "v3", "w4", "v0", "w2"]
+        main_nodes = ["x", "y", "z", "w5", "v1", "w1"]
+        int_nodes = ["w0", "v1", "v2", "w3", "v4"]
 
+        # same layout using matplotlib with no labels
+        plt.title("proper coloring")
+        pos = graphviz_layout(G, prog='dot')
         nx.draw_networkx_nodes(G, pos, nodelist=main_nodes, node_color="orange", node_size=1000)
-        nx.draw_networkx_nodes(G, pos, nodelist=int_nodes, node_color="gray", node_size=1000)
+        nx.draw_networkx_nodes(G, pos, nodelist=int_nodes, node_color="green", node_size=1000)
         nx.draw_networkx_nodes(G, pos, nodelist=end_nodes, node_color="lightblue", node_size=1000)
         nx.draw_networkx_labels(G, pos)
-        nx.draw_networkx_edges(G, pos, arrows=True)
+        nx.draw_networkx_edges(G, pos, arrowstyle='-|>')
         plt.show()
+
 
     def create_main_node(self):
         name = "v" + str(self.main_nodes)
@@ -153,5 +157,8 @@ class ExpressionGraph:
 # TODO change colors of nodes and nodes for different types / subgraphs
 # TODO there are ways to optimize the produced graph using a more extensive usage of the Propositions 2 and 1
 
-expr = ExpressionGraph("a+b+c*2")
+expr = ExpressionGraph("x * y - 0.5 * z + 1")
 expr.plot()
+
+#expr = ExpressionGraph("x + y")
+#expr.plot()
